@@ -6,4 +6,4 @@ dist/
 .vscode/
 *.env
 backend/.env
-config/
+config/config.js
