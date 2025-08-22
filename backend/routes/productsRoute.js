@@ -7,10 +7,16 @@ const productController = require('../controllers/productsController');
 // Public: Get all products
 router.get('/', productController.getAllProducts);
 
-// Admin: Add a new product (with image)
+// Public: Get products by seller ID
+router.get('/seller/:sellerId', productController.getProductsBySeller);
+
+// Seller/Admin: Add a new product (with image)
 router.post('/', verifyToken, upload.single('image'), productController.createProduct);
 
-// Admin: Delete a product by ID
+// Seller/Admin: Update a product by ID (with optional image)
+router.put('/:id', verifyToken, upload.single('image'), productController.updateProduct);
+
+// Seller/Admin: Delete a product by ID
 router.delete('/:id', verifyToken, productController.deleteProduct);
 
 module.exports = router;

@@ -1,27 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChickenMarket - Recipes</title>
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="../styles/styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/frontend/styles/styles.css" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body class="bg-gray-100 font-inter">
-
-  <!-- Navigation -->
+  <!-- Header -->
   <header class="flex items-center justify-between p-4 bg-yellow-400 shadow">
     <div class="flex items-center gap-4">
-      <img src="/assets/logo.png" alt="MDF Logo" class="w-10 h-10">
+      <img src="/uploads/chickenlogo.jpeg" alt="MDF Logo" class="w-10 h-10" />
       <span class="text-xl font-bold text-gray-800">ChickenMarket</span>
     </div>
     <nav class="flex gap-6 items-center">
       <a href="index.html">Home</a>
       <a href="products.html">Products</a>
       <a href="recipes.html" class="font-bold">Recipes</a>
+      <a href="orders.html" id="orders-tab" class="hidden">Orders</a>
       <a href="profile.html" id="profile-link" class="hidden flex items-center gap-2">
-        <img id="header-profile-pic" src="/assets/default.jpg" class="w-7 h-7 rounded-full" alt="Profile">
+        <img id="header-profile-pic" src="/uploads/icon.png" class="w-7 h-7 rounded-full" alt="Profile" />
         <span id="profile-username">User</span>
       </a>
       <a href="#" id="logout-btn" class="hidden text-red-600">Logout</a>
@@ -37,10 +43,12 @@
     </div>
   </main>
 
+  <!-- Footer -->
   <footer class="bg-yellow-400 text-center py-4 mt-10">
     <p class="text-gray-800">&copy; 2025 ChickenMarket. All rights reserved.</p>
   </footer>
 
-  <script src="../js/recipes.js"></script>
+  <script src="/frontend/public/js/script.js"></script>
+  <script src="/frontend/public/js/recipes.js"></script>
 </body>
 </html>

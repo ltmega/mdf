@@ -407,3 +407,31 @@ footer {
     text-align: center;
   }
 }
+
+/* Navigation Enhancements */
+nav a {
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  color: #000;
+}
+
+#profile-link img {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #facc15;
+}
+
+#logout-btn {
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+#logout-btn:hover {
+  color: #b9a11cff;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}

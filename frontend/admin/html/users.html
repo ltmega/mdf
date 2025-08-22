@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Users - ChickenMarket</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/frontend/styles/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-inter">
+  <!-- Navigation -->
+  <header class="flex items-center justify-between p-4 bg-yellow-400 shadow">
+    <div class="flex items-center gap-4">
+      <img src="/upload/chickenlogo.jpeg" alt="MDF Logo" class="w-10 h-10">
+      <span class="text-xl font-bold text-gray-800">ChickenMarket Admin</span>
+    </div>
+    <nav class="flex gap-6 items-center">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="orders.html">Orders</a>
+      <a href="products.html">Products</a>
+      <a href="recipes.html">Recipes</a>
+      <a href="users.html" class="font-bold">Users</a>
+      <a href="#" id="logout-btn" class="text-red-600">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="p-8 max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Manage Users</h1>
+    
+    <!-- Users Table -->
+    <div class="bg-white p-6 rounded-lg shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">All Users</h2>
+        <div>
+          <input type="text" id="search-users" placeholder="Search users..." class="rounded-md border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        </div>
+      </div>
+      <div id="users-list" class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+            <tr>
+              <td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading users...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-yellow-400 text-center py-4 mt-10">
+    <p class="text-gray-800">&copy; 2025 ChickenMarket. All rights reserved.</p>
+  </footer>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/users.js"></script>
+</body>
+</html>
