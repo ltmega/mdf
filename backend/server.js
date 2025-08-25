@@ -14,7 +14,7 @@ const usersRoute = require('./routes/usersRoute.js');
 
 const app = express();
 
-// ✅ Middleware
+// Middleware
 app.use(cors({
   origin: ['http://127.0.0.1:5500'], // Live Server origin
 }));

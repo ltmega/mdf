@@ -54,7 +54,7 @@ products.forEach(product => {
     </td>
     <td class="px-4 py-2 font-semibold text-gray-800">${product.product_name}</td>
     <td class="px-4 py-2 text-gray-600">${product.description || "No description"}</td>
-    <td class="px-4 py-2 text-orange-600 font-bold">₵${product.price_per_unit}</td>
+    <td class="px-4 py-2 text-orange-600 font-bold">UGX ${product.price_per_unit}</td>
     <td class="px-4 py-2">${product.unit}</td>
     <td class="px-4 py-2">${product.available_quantity}</td>
   `;

@@ -51,4 +51,53 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
     `;
   }
+
+  // Add order button to each recipe card
+recipes.forEach(recipe => {
+  const card = document.createElement('div');
+  card.className = 'bg-white rounded-lg shadow-md overflow-hidden mb-6';
+
+  const content = document.createElement('div');
+  content.className = 'p-4';
+  content.innerHTML = `
+    <h2 class="text-xl font-bold text-gray-800 mb-2">${recipe.recipe_name}</h2>
+    <p class="text-sm text-gray-600 mb-2"><strong>Ingredients:</strong> ${recipe.ingredients}</p>
+    <p class="text-sm text-gray-600"><strong>Instructions:</strong> ${recipe.instructions}</p>
+    <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4" onclick="orderIngredients(${recipe.id})">
+      Order Ingredients
+    </button>
+  `;
+
+  card.appendChild(content);
+  recipeList.appendChild(card);
+});
+
+// Function to order ingredients
+async function orderIngredients(recipeId) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+
+  if (!user || user.user_role !== 'buyer') {
+    alert('You must be logged in as a buyer to order ingredients.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ recipe_id: recipeId }),
+    });
+
+    if (!res.ok) throw new Error('Failed to place order.');
+
+    alert('Order placed successfully!');
+  } catch (error) {
+    console.error('Error placing order:', error);
+    alert('Failed to place order. Please try again.');
+  }
+}
 });

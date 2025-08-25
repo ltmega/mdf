@@ -36,18 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
-    if (!username) {
-      showMessage("Please enter your username", "error");
-      return;
-    }
-    if (!password) {
-      showMessage("Please enter your password", "error");
-      return;
-    }
-    if (!isLogin && !email) {
-      showMessage("Please enter your email", "error");
-      return;
-    }
+    if (!username) return showMessage("Please enter your username", "error");
+    if (!password) return showMessage("Please enter your password", "error");
+    if (!isLogin && !email) return showMessage("Please enter your email", "error");
 
     const endpoint = isLogin
       ? "http://localhost:5000/api/users/login"
@@ -79,36 +70,37 @@ document.addEventListener("DOMContentLoaded", () => {
         data = text ? JSON.parse(text) : {};
       } catch (err) {
         console.error("❌ JSON parse error:", err);
-        data = {};
+        return showMessage("Invalid server response.", "error");
       }
 
       if (!res.ok) {
-        showMessage(data.error || data.message || "Something went wrong.", "error");
-        return;
+        return showMessage(data.error || data.message || "Something went wrong.", "error");
       }
 
-      if (!isLogin) {
-        showMessage(data.message || "Registration successful!", "success");
-        alert("Registration successful! Please login.");
-        setTimeout(() => {
-          toggleBtn.click();
-        }, 1000);
-        return;
+      if (!data.user || !data.user.user_role) {
+        console.warn("⚠️ Missing user role in response:", data.user);
+        return showMessage("Login failed: Missing user role.", "error");
       }
 
-      // Login success
-      showMessage("Login successful! Redirecting...", "success");
+      // Save token and user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      showMessage("Login successful! Redirecting...", "success");
+
+      // Redirect based on role
       setTimeout(() => {
-        switch (data.user.user_role) {
+        const role = data.user.user_role;
+        console.log("🔍 Redirecting based on role:", role);
+
+        switch (role) {
           case "admin":
             window.location.href = "/frontend/admin/html/admin-dashboard.html";
             break;
           case "seller":
             window.location.href = "/frontend/seller/seller-dashboard.html";
             break;
+          case "buyer":
           default:
             window.location.href = "/frontend/public/html/index.html";
         }

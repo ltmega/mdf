@@ -19,8 +19,15 @@ const upload = multer({ storage });
 // Get user profile
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [users] = await db.promise().query('SELECT id, name, email, role, profile_pic FROM users WHERE id = ?', [req.user.id]);
-    res.json(users[0]);
+    const [users] = await db.promise().query('SELECT user_id, username, email, user_role, profile_picture_url FROM users WHERE user_id = ?', [req.user.id]);
+    const user = users[0];
+    res.json({
+      user_id: user.user_id,
+      username: user.username,
+      email: user.email,
+      user_role: user.user_role,
+      profile_picture_url: user.profile_picture_url
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching profile' });
   }

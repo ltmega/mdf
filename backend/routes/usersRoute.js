@@ -94,4 +94,32 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// GET /api/users - Get all users (admin only)
+router.get('/', async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user is admin
+    if (decoded.user_role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admins only.' });
+    }
+
+    // Get all users
+    const [users] = await db.query('SELECT user_id, username, email, user_role, is_member FROM users');
+    
+    res.json(users);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChickenMarket - Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body class="bg-gray-100 font-inter">
+  <header class="flex items-center justify-between p-4 bg-yellow-400 shadow">
+    <div class="flex items-center gap-4">
+      <img src="/uploads/chickenlogo.jpeg" alt="MDF Logo" class="w-10 h-10">
+      <span class="text-xl font-bold text-gray-800">ChickenMarket</span>
+    </div>
+    <nav class="flex gap-6 items-center">
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="recipes.html">Recipes</a>
+      <a href="orders.html">Orders</a>
+      <a href="profile.html">Profile</a>
+      <a href="#" id="logout-btn" class="text-red-600">Logout</a>
+    </nav>
+  </header>
+
+  <main class="p-8 max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Your Cart</h1>
+    <div id="cart-items" class="space-y-4"></div>
+    <div class="mt-6 text-right">
+      <button class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md" onclick="checkout()">
+        Checkout
+      </button>
+    </div>
+  </main>
+
+  <footer class="bg-yellow-400 text-center py-4 mt-10">
+    <p class="text-gray-800">&copy; 2025 ChickenMarket. All rights reserved.</p>
+  </footer>
+
+  <script src="../js/cart.js"></script>
+</body>
+</html>
