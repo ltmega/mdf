@@ -1,103 +1,78 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  const recipeList = document.getElementById('recipe-list');
-  const API_BASE = "http://localhost:5000";
+document.addEventListener("DOMContentLoaded", async () => {
+  const recipeList = document.getElementById("recipe-list");
+  recipeList.innerHTML = '<p class="text-gray-600 text-center">Loading recipes...</p>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/recipes`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const API_BASE = "http://localhost:5000";
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("You must be logged in to view recipes.");
+      window.location.href = "login.html";
+      return;
+    }
+
+    const res = await fetch(`${API_BASE}/api/recipes`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to load recipes");
 
     const recipes = await res.json();
-    recipeList.innerHTML = '';
+    if (recipes.length === 0) {
+      recipeList.innerHTML = "<p class='text-gray-600 text-center'>No recipes available.</p>";
+      return;
+    }
 
-    recipes.forEach(recipe => {
-      // Construct full image URL
-      const imageUrl = `${API_BASE}${recipe.recipe_image_url}`;
-
-      // Create image element with fallback
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      img.alt = recipe.recipe_name;
-      img.className = 'w-full h-48 object-cover';
-      img.onerror = () => {
-        if (!img.dataset.fallback) {
-          img.src = `${API_BASE}/uploads/fallbacks/no-image.jpg`;
-          img.dataset.fallback = true;
-        }
-      };
-
-      // Create card container
-      const card = document.createElement('div');
-      card.className = 'bg-white rounded-lg shadow-md overflow-hidden mb-6';
-
-      // Create content section
-      const content = document.createElement('div');
-      content.className = 'p-4';
-      content.innerHTML = `
-        <h2 class="text-xl font-bold text-gray-800 mb-2">${recipe.recipe_name}</h2>
-        <p class="text-sm text-gray-600 mb-2"><strong>Ingredients:</strong> ${recipe.ingredients}</p>
-        <p class="text-sm text-gray-600"><strong>Instructions:</strong> ${recipe.instructions}</p>
-      `;
-
-      // Assemble card
-      card.appendChild(img);
-      card.appendChild(content);
-      recipeList.appendChild(card);
-    });
+    recipeList.innerHTML = recipes
+      .map(
+        (recipe) => `
+        <div class="bg-white p-4 rounded-lg shadow">
+          <img src="${API_BASE}${recipe.recipe_image_url}" 
+               alt="${recipe.recipe_name}" 
+               class="w-full h-48 object-cover rounded-md mb-4"
+               onerror="this.src='${API_BASE}/uploads/recipes/default.jpg'" />
+          <h2 class="text-lg font-bold text-gray-800">${recipe.recipe_name}</h2>
+          <p class="text-sm text-gray-600">${recipe.ingredients || "No ingredients available."}</p>
+          <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4" onclick="orderIngredients(${recipe.recipe_id})">
+            Order Ingredients
+          </button>
+        </div>
+      `
+      )
+      .join("");
   } catch (err) {
-    console.error('Error loading recipes:', err);
-    recipeList.innerHTML = `
-      <div class="text-center text-red-600 mt-4">
-        <p>⚠️ Failed to load recipes. Please check your backend and try again.</p>
-      </div>
-    `;
+    console.error("Error loading recipes:", err);
+    recipeList.innerHTML = `<p class='text-red-600 text-center'>${err.message}</p>`;
   }
-
-  // Add order button to each recipe card
-recipes.forEach(recipe => {
-  const card = document.createElement('div');
-  card.className = 'bg-white rounded-lg shadow-md overflow-hidden mb-6';
-
-  const content = document.createElement('div');
-  content.className = 'p-4';
-  content.innerHTML = `
-    <h2 class="text-xl font-bold text-gray-800 mb-2">${recipe.recipe_name}</h2>
-    <p class="text-sm text-gray-600 mb-2"><strong>Ingredients:</strong> ${recipe.ingredients}</p>
-    <p class="text-sm text-gray-600"><strong>Instructions:</strong> ${recipe.instructions}</p>
-    <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4" onclick="orderIngredients(${recipe.id})">
-      Order Ingredients
-    </button>
-  `;
-
-  card.appendChild(content);
-  recipeList.appendChild(card);
 });
 
-// Function to order ingredients
+// Order ingredients for a recipe
 async function orderIngredients(recipeId) {
-  const user = JSON.parse(localStorage.getItem('user'));
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
-  if (!user || user.user_role !== 'buyer') {
-    alert('You must be logged in as a buyer to order ingredients.');
+  if (!token) {
+    alert("You must be logged in as a buyer to order ingredients.");
     return;
   }
 
   try {
-    const res = await fetch('/api/orders', {
-      method: 'POST',
+    const res = await fetch(`http://localhost:5000/api/orders`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ recipe_id: recipeId }),
     });
 
-    if (!res.ok) throw new Error('Failed to place order.');
+    if (!res.ok) throw new Error("Failed to place order.");
 
-    alert('Order placed successfully!');
-  } catch (error) {
-    console.error('Error placing order:', error);
-    alert('Failed to place order. Please try again.');
+    alert("Order placed successfully!");
+  } catch (err) {
+    console.error("Error placing order:", err);
+    alert("Failed to place order. Please try again.");
   }
 }
-});

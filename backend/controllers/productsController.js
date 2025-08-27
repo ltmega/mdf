@@ -27,15 +27,15 @@ exports.getProductsBySeller = async (req, res) => {
 
 // ✅ Create a product
 exports.createProduct = async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'seller') {
+  if (req.user.user_role !== 'admin' && req.user.user_role !== 'seller') {
     return res.status(403).json({ message: 'Access denied. Admins and sellers only.' });
   }
 
-  const { name, description, price_per_unit, unit, available_quantity } = req.body;
-  const image = req.file?.filename;
+  const { product_name, description, price_per_unit, unit, available_quantity } = req.body;
+  const product_image_url = req.file?.filename;
 
-  if (!name || !price_per_unit || !unit || !available_quantity || !image) {
-    return res.status(400).json({ message: 'Name, price, unit, quantity, and image are required' });
+  if (!product_name || !price_per_unit || !unit || !available_quantity || !product_image_url) {
+    return res.status(400).json({ message: 'All fields are required.' });
   }
 
   try {
@@ -45,13 +45,13 @@ exports.createProduct = async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     await db.query(sql, [
-      req.user.id,
-      name,
+      req.user.user_id,
+      product_name,
       description || '',
       price_per_unit,
       unit,
       available_quantity,
-      image,
+      product_image_url,
     ]);
     res.status(201).json({ message: 'Product created successfully' });
   } catch (err) {
@@ -62,13 +62,13 @@ exports.createProduct = async (req, res) => {
 
 // ✅ Update a product
 exports.updateProduct = async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'seller') {
+  if (req.user.user_role !== 'admin' && req.user.user_role !== 'seller') {
     return res.status(403).json({ message: 'Access denied. Admins and sellers only.' });
   }
 
   const productId = req.params.id;
-  const { name, description, price_per_unit, unit, available_quantity } = req.body;
-  const image = req.file?.filename;
+  const { product_name, description, price_per_unit, unit, available_quantity } = req.body;
+  const product_image_url = req.file?.filename;
 
   try {
     const [products] = await db.query('SELECT seller_id FROM products WHERE product_id = ?', [productId]);
@@ -77,25 +77,25 @@ exports.updateProduct = async (req, res) => {
     }
 
     const product = products[0];
-    if (req.user.role !== 'admin' && product.seller_id !== req.user.id) {
+    if (req.user.user_role !== 'admin' && product.seller_id !== req.user.user_id) {
       return res.status(403).json({ message: 'Access denied. You can only update your own products.' });
     }
 
     let sql, values;
-    if (image) {
+    if (product_image_url) {
       sql = `
         UPDATE products 
         SET product_name = ?, description = ?, price_per_unit = ?, unit = ?, available_quantity = ?, product_image_url = ? 
         WHERE product_id = ?
       `;
-      values = [name, description || '', price_per_unit, unit, available_quantity, image, productId];
+      values = [product_name, description || '', price_per_unit, unit, available_quantity, product_image_url, productId];
     } else {
       sql = `
         UPDATE products 
         SET product_name = ?, description = ?, price_per_unit = ?, unit = ?, available_quantity = ? 
         WHERE product_id = ?
       `;
-      values = [name, description || '', price_per_unit, unit, available_quantity, productId];
+      values = [product_name, description || '', price_per_unit, unit, available_quantity, productId];
     }
 
     await db.query(sql, values);
@@ -108,7 +108,7 @@ exports.updateProduct = async (req, res) => {
 
 // ✅ Delete a product
 exports.deleteProduct = async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'seller') {
+  if (req.user.user_role !== 'admin' && req.user.user_role !== 'seller') {
     return res.status(403).json({ message: 'Access denied. Admins and sellers only.' });
   }
 
@@ -121,7 +121,7 @@ exports.deleteProduct = async (req, res) => {
     }
 
     const product = products[0];
-    if (req.user.role !== 'admin' && product.seller_id !== req.user.id) {
+    if (req.user.user_role !== 'admin' && product.seller_id !== req.user.user_id) {
       return res.status(403).json({ message: 'Access denied. You can only delete your own products.' });
     }
 

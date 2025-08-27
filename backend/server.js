@@ -15,30 +15,37 @@ const usersRoute = require('./routes/usersRoute.js');
 const app = express();
 
 // Middleware
+const allowedOrigins = ['http://127.0.0.1:5500', 'http://localhost:5500'];
 app.use(cors({
-  origin: ['http://127.0.0.1:5500'], // Live Server origin
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
 }));
 app.use(express.json());
 
-// ✅ Serve uploads from outside backend
+// Serve uploads from outside backend
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// Serve static files
 app.use(express.static(path.join(__dirname, 'frontend/public')));
 
-
-// ✅ API routes
+// API routes
 app.use('/api/products', productRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/users', usersRoute);
 
-// ✅ Root endpoint
+// Root endpoint
 app.get('/', (req, res) => {
   res.send('MDF Chicken Market API is running');
 });
 
-// ✅ DB connection test
+// DB connection test
 db.getConnection((err, connection) => {
   if (err) {
     console.error('❌ Database connection error:', err.message);
@@ -48,7 +55,7 @@ db.getConnection((err, connection) => {
   }
 });
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

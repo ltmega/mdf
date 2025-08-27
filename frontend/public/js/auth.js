@@ -8,14 +8,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleBtn = document.getElementById("toggle-button");
   const messageBox = document.getElementById("message");
 
+  if (!formTitle || !nameField || !nameInput || !emailInput || !passwordInput || !submitBtn || !toggleBtn || !messageBox) {
+    console.error("One or more required elements are missing in the DOM.");
+    return;
+  }
+
   let isLogin = true;
 
+  // Function to display messages
   function showMessage(text, type) {
     messageBox.textContent = text;
     messageBox.className = `${type} mt-2 text-sm text-center`;
     messageBox.classList.remove("hidden");
   }
 
+  // Toggle between Login and Register forms
   toggleBtn.addEventListener("click", () => {
     isLogin = !isLogin;
     formTitle.textContent = isLogin ? "Login" : "Register";
@@ -27,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     messageBox.textContent = "";
   });
 
+  // Handle form submission
   document.getElementById("auth-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     messageBox.className = "hidden";
@@ -36,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
+    // Validate input fields
     if (!username) return showMessage("Please enter your username", "error");
     if (!password) return showMessage("Please enter your password", "error");
     if (!isLogin && !email) return showMessage("Please enter your email", "error");
@@ -48,9 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ? { username, password }
       : { username, email, password };
 
-    console.log("🔄 Sending request to:", endpoint);
-    console.log("📦 Payload:", payload);
-
     submitBtn.disabled = true;
     const originalBtnText = submitBtn.textContent;
     submitBtn.textContent = isLogin ? "Logging in..." : "Registering...";
@@ -62,37 +68,19 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       });
 
-      const text = await res.text();
-      console.log("📨 Raw response:", text);
-
-      let data = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch (err) {
-        console.error("❌ JSON parse error:", err);
-        return showMessage("Invalid server response.", "error");
-      }
+      const data = await res.json();
 
       if (!res.ok) {
         return showMessage(data.error || data.message || "Something went wrong.", "error");
       }
 
-      if (!data.user || !data.user.user_role) {
-        console.warn("⚠️ Missing user role in response:", data.user);
-        return showMessage("Login failed: Missing user role.", "error");
-      }
-
-      // Save token and user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       showMessage("Login successful! Redirecting...", "success");
 
-      // Redirect based on role
       setTimeout(() => {
         const role = data.user.user_role;
-        console.log("🔍 Redirecting based on role:", role);
-
         switch (role) {
           case "admin":
             window.location.href = "/frontend/admin/html/admin-dashboard.html";
@@ -106,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 1500);
     } catch (err) {
-      console.error("❌ Fetch error:", err);
+      console.error("Fetch error:", err);
       showMessage("Server error. Please try again.", "error");
     } finally {
       submitBtn.disabled = false;

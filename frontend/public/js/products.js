@@ -1,85 +1,113 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const productList = document.getElementById("product-list");
+
+  // Show loading
   productList.innerHTML = '<p class="text-gray-600 text-center">Loading products...</p>';
 
   try {
     const API_BASE = "http://localhost:5000";
-    const res = await fetch(`${API_BASE}/api/products`);
-    console.log("📨 Fetching products from:", `${API_BASE}/api/products`);
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    if (!res.ok) throw new Error("Failed to load products");
+    if (!token || !user) {
+      alert("You must be logged in to view products.");
+      window.location.href = "login.html";
+      return;
+    }
+
+    console.log("Fetching products from the backend...");
+
+    const res = await fetch(`${API_BASE}/api/products`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to load products.");
+    }
 
     const products = await res.json();
-    console.log("✅ Products received:", products);
+    console.log("Products fetched successfully:", products);
 
-    if (products.length === 0) {
+    if (!products || products.length === 0) {
       productList.innerHTML = "<p class='text-gray-600 text-center'>No products available.</p>";
       return;
     }
 
-    productList.innerHTML = `
-      <table class="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
-        <thead class="bg-yellow-400 text-gray-800">
-          <tr>
-            <th class="px-4 py-2">Image</th>
-            <th class="px-4 py-2">Name</th>
-            <th class="px-4 py-2">Description</th>
-            <th class="px-4 py-2">Price</th>
-            <th class="px-4 py-2">Unit</th>
-            <th class="px-4 py-2">Available</th>
-          </tr>
-        </thead>
-        <tbody id="product-table-body" class="divide-y divide-gray-200"></tbody>
-      </table>
-    `;
+    // Save products in memory for cart use
+    window.productsCache = products;
 
-    const tbody = document.getElementById("product-table-body");
+    // Render products safely
+    productList.innerHTML = "";
+    products.forEach((product) => {
+      const div = document.createElement("div");
+      div.className = "bg-white p-4 rounded-lg shadow";
 
-products.forEach(product => {
-  const filename = product.product_image_url
-    .replace(/^\/?uploads\/products\/|^\/+/, '')
-    .trim();
+      div.innerHTML = `
+        <img src="${API_BASE}${product.product_image_url}" 
+             alt="${product.product_name}" 
+             class="w-full h-48 object-cover rounded-md mb-4"
+             onerror="this.src='${API_BASE}/uploads/products/default.jpg'" />
+        <h2 class="text-lg font-bold text-gray-800">${product.product_name}</h2>
+        <p class="text-sm text-gray-600">${product.description || "No description available."}</p>
+        <p class="text-orange-600 font-bold mt-2">UGX ${product.price_per_unit}</p>
+        <p class="text-sm text-gray-600">Unit: ${product.unit}</p>
+        <p class="text-sm text-gray-600">Available: ${product.available_quantity}</p>
+        <button 
+          class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4"
+          data-id="${product.product_id}">
+          Add to Cart
+        </button>
+      `;
 
-  const imageUrl = `${API_BASE}/uploads/products/${filename}`;
-  console.log(`🖼️ Product: "${product.product_name}", Image URL: ${imageUrl}`);
+      // Attach event handler to button
+      const button = div.querySelector("button");
+      button.addEventListener("click", () => addToCartById(product.product_id));
 
-  const row = document.createElement("tr");
+      productList.appendChild(div);
+    });
 
-  row.innerHTML = `
-    <td class="px-4 py-2">
-      <img src="${imageUrl}" 
-           alt="${product.product_name}" 
-           class="w-16 h-16 object-cover rounded-md"
-           onerror="handleImageError(this)" />
-    </td>
-    <td class="px-4 py-2 font-semibold text-gray-800">${product.product_name}</td>
-    <td class="px-4 py-2 text-gray-600">${product.description || "No description"}</td>
-    <td class="px-4 py-2 text-orange-600 font-bold">UGX ${product.price_per_unit}</td>
-    <td class="px-4 py-2">${product.unit}</td>
-    <td class="px-4 py-2">${product.available_quantity}</td>
-  `;
-  tbody.appendChild(row);
-});
-
+    // Initialize cart count
+    updateCartCount();
   } catch (err) {
-    console.error("❌ Error loading products:", err);
+    console.error("Error loading products:", err);
     productList.innerHTML = `<p class='text-red-600 text-center'>${err.message}</p>`;
   }
 });
 
-// ✅ Prevent fallback loop and show placeholder
-function handleImageError(img) {
-  if (!img.dataset.fallback) {
-    console.warn("⚠️ Image failed to load:", img.src);
-    img.src = "http://localhost:5000/uploads/products/default.jpg";
-    img.dataset.fallback = "true";
+// ✅ Add product by ID safely
+function addToCartById(productId) {
+  const product = window.productsCache.find((p) => p.product_id == productId);
+  if (product) {
+    addToCart(product);
   } else {
-    console.error("❌ Fallback image also failed:", img.src);
-    img.src = "data:image/svg+xml;base64," + btoa(`
-      <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'>
-        <rect width='100%' height='100%' fill='#f3f3f3'/>
-        <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#999' font-size='12'>No Image</text>
-      </svg>
-    `);
+    alert("Product not found.");
   }
+}
+
+// ✅ Add product to cart
+function addToCart(product) {
+  try {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    // Check if product exists
+    const existing = cart.find((item) => item.product_id === product.product_id);
+    if (existing) {
+      alert(`${product.product_name} is already in your cart.`);
+      return;
+    }
+
+    cart.push(product);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert(`${product.product_name} added to cart!`);
+    updateCartCount();
+  } catch (err) {
+    console.error("Error adding to cart:", err);
+  }
+}
+
+// ✅ Update cart count
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const cartCount = document.getElementById("cart-count");
+  if (cartCount) cartCount.textContent = cart.length;
 }

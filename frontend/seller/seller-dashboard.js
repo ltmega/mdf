@@ -1,43 +1,43 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
 
-    if (!user || !token) {
-        window.location.href = 'login.html';
-        return;
+  if (!user || !token) {
+    window.location.href = '../../public/html/login.html';
+    return;
+  }
+
+  if (user.user_role !== 'seller') {
+    switch (user.user_role) {
+      case 'admin':
+        window.location.href = '../../admin/html/admin-dashboard.html';
+        break;
+      case 'buyer':
+      default:
+        window.location.href = '../../public/html/index.html';
     }
+    return;
+  }
 
-    if (user.user_role !== 'seller') {
-        switch (user.user_role) {
-            case 'admin':
-                window.location.href = '../../admin/html/orders.html';
-                break;
-            case 'customer':
-            default:
-                window.location.href = 'products.html';
-        }
-        return;
-    }
+  // Show seller-specific UI
+  document.getElementById('profile-username').textContent = user.username;
+  document.getElementById('profile-link').classList.remove('hidden');
+  document.getElementById('logout-btn').classList.remove('hidden');
+  document.getElementById('login-register-link').classList.add('hidden');
 
-    // Show seller-specific UI
-    document.getElementById('profile-username').textContent = user.username;
-    document.getElementById('profile-link').classList.remove('hidden');
-    document.getElementById('logout-btn').classList.remove('hidden');
-    document.getElementById('login-register-link').classList.add('hidden');
+  document.getElementById('logout-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '../../public/html/login.html';
+  });
 
-    document.getElementById('logout-btn').addEventListener('click', function (e) {
-        e.preventDefault();
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/frontend/public/html/login.html';
-    });
+  // Load dashboard data
+  loadDashboardData();
 
-    // Load dashboard data
-    loadDashboardData();
-
-    // Form handlers
-    document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
-    document.getElementById('add-recipe-form').addEventListener('submit', handleAddRecipe);
+  // Form handlers
+  document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
+  document.getElementById('add-recipe-form').addEventListener('submit', handleAddRecipe);
 });
 
 // Tab switching
@@ -61,63 +61,47 @@ function showTab(tabName) {
 
 // Load dashboard data
 async function loadDashboardData() {
-    try {
-        const token = localStorage.getItem('token');
-        await loadProducts(token);
-        await loadOrders(token);
-        await updateStats();
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-    }
+  try {
+    const token = localStorage.getItem('token');
+    await loadProducts(token);
+    await loadOrders(token);
+    await updateStats();
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+  }
 }
 
 // Load seller products
 async function loadProducts(token) {
-    const user = JSON.parse(localStorage.getItem('user'));
-    try {
-        const response = await fetch(`http://localhost:5000/api/products/seller/${user.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+  const user = JSON.parse(localStorage.getItem('user'));
+  try {
+    const response = await fetch(`http://localhost:5000/api/products/seller/${user.user_id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-        if (!response.ok) throw new Error('Failed to fetch products');
+    if (!response.ok) throw new Error('Failed to fetch products');
 
-        const products = await response.json();
-        const container = document.getElementById('products-list');
+    const products = await response.json();
+    const container = document.getElementById('products-list');
 
-        if (products.length === 0) {
-            container.innerHTML = `
-                <div class="col-span-full text-center text-gray-500">
-                    <p>You haven't added any products yet.</p>
-                    <p class="mt-2">Use the form above to add your first product.</p>
-                </div>`;
-            return;
-        }
-
-        container.innerHTML = products.map(product => `
-            <div class="border rounded-lg p-4 shadow-sm">
-                <img src="/uploads/${product.product_image_url}" alt="${product.product_name}" class="w-full h-48 object-cover rounded-md mb-4">
-                <h3 class="text-lg font-semibold mb-2">${product.product_name}</h3>
-                <p class="text-gray-600 mb-2">${product.description || 'No description available'}</p>
-                <div class="flex justify-between items-center">
-                    <span class="text-orange-500 font-bold">₵${product.price_per_unit}/${product.unit}</span>
-                    <span class="text-gray-500">Qty: ${product.available_quantity}</span>
-                </div>
-                <div class="mt-4 flex justify-end space-x-2">
-                    <button class="text-blue-500 hover:text-blue-700" onclick="editProduct(${product.product_id})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="text-red-500 hover:text-red-700" onclick="deleteProduct(${product.product_id})">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
-            </div>`).join('');
-    } catch (error) {
-        console.error('Error loading products:', error);
-        document.getElementById('products-list').innerHTML = `
-            <div class="col-span-full text-center text-red-500">
-                <p>Error loading products. Please try again later.</p>
-            </div>`;
+    if (products.length === 0) {
+      container.innerHTML = '<p>No products found.</p>';
+      return;
     }
+
+    container.innerHTML = products
+      .map(
+        (product) => `
+      <div>
+        <h3>${product.product_name}</h3>
+        <p>${product.description}</p>
+      </div>
+    `
+      )
+      .join('');
+  } catch (error) {
+    console.error('Error loading products:', error);
+  }
 }
 
 // Load seller orders

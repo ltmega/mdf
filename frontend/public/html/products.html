@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChickenMarket - Products</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="/frontend/styles/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 font-inter">
@@ -19,6 +19,7 @@
       <a href="index.html">Home</a>
       <a href="products.html" class="font-bold">Products</a>
       <a href="recipes.html">Recipes</a>
+      <a href="cart.html" id="cart-tab">Cart (<span id="cart-count">0</span>)</a>
       <a href="orders.html" id="orders-tab" class="hidden">Orders</a>
       <a href="profile.html" id="profile-link" class="hidden flex items-center gap-2">
         <img id="header-profile-pic" src="/uploads/icon.png" class="w-7 h-7 rounded-full" alt="Profile">
@@ -40,7 +41,9 @@
   <footer class="bg-yellow-400 text-center py-4 mt-10">
     <p class="text-gray-800">&copy; 2025 ChickenMarket. All rights reserved.</p>
   </footer>
-<script src="/frontend/public/js/auth.js"></script>
+
+  <script src="/frontend/public/js/script.js"></script>
+  <script src="/frontend/public/js/cart.js"></script>
   <script src="/frontend/public/js/products.js"></script>
 </body>
 </html>
