@@ -3,6 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db.js');
+const verifyToken = require('../middleware/authMiddleware');
+const requireRole = require('../middleware/roleMiddleware');
 
 // POST /api/users/register
 router.post('/register', async (req, res) => {
@@ -74,7 +76,7 @@ router.post('/login', async (req, res) => {
     console.log("✅ Login successful:", {
       user_id: user.user_id,
       username: user.username,
-      role: user.user_role,
+      user_role: user.user_role,
     });
 
     res.status(200).json({
@@ -85,7 +87,7 @@ router.post('/login', async (req, res) => {
         username: user.username,
         email: user.email,
         user_role: user.user_role,
-        profile_picture_url: user.profile_picture_url || 'icon.png',
+        profile_picture_url: user.profile_picture_url || '/uploads/icon.png',
       },
     });
   } catch (err) {
@@ -95,25 +97,10 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/users - Get all users (admin only)
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, requireRole(['admin']), async (req, res) => {
   try {
-    // Get token from header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'No token, authorization denied' });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Check if user is admin
-    if (decoded.user_role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admins only.' });
-    }
-
     // Get all users
-    const [users] = await db.query('SELECT user_id, username, email, user_role, is_member FROM users');
+    const [users] = await db.query('SELECT user_id, username, email, user_role FROM users');
     
     res.json(users);
   } catch (err) {

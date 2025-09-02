@@ -28,10 +28,12 @@ exports.getOrdersBySeller = async (req, res) => {
     console.log('👤 getOrdersBySeller for seller_id:', req.user.user_id);
 
     const [rows] = await db.query(
-      `SELECT o.*, u.username AS buyer_name
+      `SELECT DISTINCT o.*, u.username AS buyer_name
        FROM orders o
        JOIN users u ON o.buyer_id = u.user_id
-       WHERE o.seller_id = ?
+       JOIN order_items oi ON oi.order_id = o.order_id
+       JOIN products p ON p.product_id = oi.product_id
+       WHERE p.seller_id = ?
        ORDER BY o.order_date DESC`,
       [req.user.user_id]
     );
@@ -49,6 +51,7 @@ exports.getOrdersBySeller = async (req, res) => {
 // Body: { items:[{product_id, quantity, price}], total_amount, delivery_address }
 // -------------------------
 exports.createOrder = async (req, res) => {
+    console.log('📦 Request body:', req.body);
   console.log('📦 createOrder body:', req.body);
   console.log('🔐 user in req.user:', req.user);
 
@@ -125,11 +128,9 @@ exports.getAllOrders = async (_req, res) => {
     console.log('🗂️ Admin getAllOrders');
     const [rows] = await db.query(
       `SELECT o.*,
-              u.username AS buyer_name,
-              s.username AS seller_name
+              u.username AS buyer_name
        FROM orders o
        JOIN users u ON o.buyer_id = u.user_id
-       LEFT JOIN users s ON o.seller_id = s.user_id
        ORDER BY o.order_date DESC`
     );
     console.log('✅ Orders total:', rows.length);

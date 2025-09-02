@@ -1,78 +1,101 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const recipeList = document.getElementById("recipe-list");
-  recipeList.innerHTML = '<p class="text-gray-600 text-center">Loading recipes...</p>';
+  const recipesList = document.getElementById("recipe-list");
+  const API_BASE = "http://localhost:5000";
+  const token = localStorage.getItem("token");
 
   try {
-    const API_BASE = "http://localhost:5000";
-    const token = localStorage.getItem("token");
+    recipesList.innerHTML = '<p class="text-gray-600 text-center">Loading recipes...</p>';
 
-    if (!token) {
-      alert("You must be logged in to view recipes.");
-      window.location.href = "login.html";
-      return;
-    }
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${API_BASE}/api/recipes`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(`${API_BASE}/api/recipes`, { headers });
+    if (!response.ok) throw new Error('Failed to fetch recipes');
 
-    if (!res.ok) throw new Error("Failed to load recipes");
-
-    const recipes = await res.json();
-    if (recipes.length === 0) {
-      recipeList.innerHTML = "<p class='text-gray-600 text-center'>No recipes available.</p>";
-      return;
-    }
-
-    recipeList.innerHTML = recipes
-      .map(
-        (recipe) => `
-        <div class="bg-white p-4 rounded-lg shadow">
-          <img src="${API_BASE}${recipe.recipe_image_url}" 
-               alt="${recipe.recipe_name}" 
-               class="w-full h-48 object-cover rounded-md mb-4"
-               onerror="this.src='${API_BASE}/uploads/recipes/default.jpg'" />
-          <h2 class="text-lg font-bold text-gray-800">${recipe.recipe_name}</h2>
-          <p class="text-sm text-gray-600">${recipe.ingredients || "No ingredients available."}</p>
-          <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4" onclick="orderIngredients(${recipe.recipe_id})">
-            Order Ingredients
-          </button>
-        </div>
-      `
-      )
-      .join("");
-  } catch (err) {
-    console.error("Error loading recipes:", err);
-    recipeList.innerHTML = `<p class='text-red-600 text-center'>${err.message}</p>`;
+    const recipes = await response.json();
+    displayRecipes(recipes, API_BASE);
+  } catch (error) {
+    console.error('Error loading recipes:', error);
+    recipesList.innerHTML = `
+      <div class="text-center text-red-500">
+        <p>Error loading recipes. Please try again later.</p>
+      </div>
+    `;
   }
 });
 
-// Order ingredients for a recipe
-async function orderIngredients(recipeId) {
-  const token = localStorage.getItem("token");
+function displayRecipes(recipes, API_BASE) {
+  const recipesList = document.getElementById("recipe-list");
 
-  if (!token) {
-    alert("You must be logged in as a buyer to order ingredients.");
+  if (recipes.length === 0) {
+    recipesList.innerHTML = `
+      <div class="text-center text-gray-500">
+        <p>No recipes available.</p>
+      </div>
+    `;
     return;
   }
 
+  recipesList.innerHTML = recipes.map(recipe => {
+    const imageUrl = recipe.recipe_image_url || "/uploads/icon.png";
+    const fullImageUrl = imageUrl.startsWith("/uploads/")
+      ? `${API_BASE}${imageUrl}`
+      : `${API_BASE}/uploads/${imageUrl}`;
+
+    return `
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <img src="${fullImageUrl}" alt="${recipe.recipe_name}"
+             class="w-full h-48 object-cover rounded-md mb-4"
+             onerror="this.src='${API_BASE}/uploads/icon.png'" />
+
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">${recipe.recipe_name}</h3>
+
+        <div class="mb-4">
+          <h4 class="font-medium text-gray-700 mb-2">Ingredients:</h4>
+          <p class="text-gray-600 text-sm">${recipe.ingredients || 'No ingredients listed'}</p>
+        </div>
+
+        <div class="mb-4">
+          <h4 class="font-medium text-gray-700 mb-2">Instructions:</h4>
+          <p class="text-gray-600 text-sm">${recipe.instructions || 'No instructions available'}</p>
+        </div>
+
+        <div class="text-sm text-gray-500 mb-4">
+          <p>Created by: ${recipe.username || 'Unknown'}</p>
+        </div>
+
+        <button 
+          class="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
+          onclick="orderIngredients(${recipe.recipe_id})">
+          Order Ingredients
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function orderIngredients(recipeId) {
   try {
-    const res = await fetch(`http://localhost:5000/api/orders`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ recipe_id: recipeId }),
-    });
+    const API_BASE = "http://localhost:5000";
+    const res = await fetch(`${API_BASE}/api/recipes/${recipeId}/ingredients`);
+    if (!res.ok) throw new Error('Failed to fetch ingredients');
 
-    if (!res.ok) throw new Error("Failed to place order.");
+    const data = await res.json();
+    const ingredientsArray = data.ingredients.split(',').map(i => ({
+      name: i.trim(),
+      quantity: 1,
+      unit: '', // optional for now
+      price: 0, // default price
+      description: '' // optional
+    }));
 
-    alert("Order placed successfully!");
+    // Use the new cart function
+    addRecipeIngredientsToCart(ingredientsArray);
+
+    // Redirect to cart
+    window.location.href = '/frontend/public/html/cart.html';
   } catch (err) {
-    console.error("Error placing order:", err);
-    alert("Failed to place order. Please try again.");
+    console.error('Error ordering ingredients:', err);
+    alert('Could not add ingredients to cart.');
   }
 }

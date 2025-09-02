@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChickenMarket - Orders</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="/frontend/styles/styles.css">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 font-inter">
@@ -41,54 +42,9 @@
     <p class="text-gray-800">&copy; 2025 ChickenMarket. All rights reserved.</p>
   </footer>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const token = localStorage.getItem('token');
-      const ordersTab = document.getElementById('orders-tab');
-      const logoutBtn = document.getElementById('logout-btn');
-      const loginRegisterLink = document.getElementById('login-register-link');
+  <script src="/frontend/public/js/auth.js"></script>
+  <script src="/frontend/public/js/script.js"></script>
+  <script src="/frontend/public/js/orders.js"></script>
 
-      if (user && user.user_role === 'buyer') {
-        ordersTab.classList.remove('hidden');
-        logoutBtn.classList.remove('hidden');
-        loginRegisterLink.classList.add('hidden');
-        loadOrders(token);
-      } else {
-        window.location.href = 'login.html';
-      }
-    });
-
-    async function loadOrders(token) {
-      const orderList = document.getElementById('order-list');
-      try {
-        const response = await fetch('/api/orders', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const orders = await response.json();
-
-        if (orders.length === 0) {
-          orderList.innerHTML = '<p class="text-gray-600 text-center">No orders found.</p>';
-        } else {
-          orderList.innerHTML = orders
-            .map(
-              (order) => `
-            <div class="bg-white p-4 rounded-lg shadow">
-              <h3 class="text-lg font-bold">Order #${order.id}</h3>
-              <p class="text-gray-600">Total: UGX ${order.total}</p>
-              <p class="text-gray-600">Status: ${order.status}</p>
-            </div>
-          `
-            )
-            .join('');
-        }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        orderList.innerHTML = '<p class="text-red-600 text-center">Failed to load orders.</p>';
-      }
-    }
-  </script>
 </body>
 </html>

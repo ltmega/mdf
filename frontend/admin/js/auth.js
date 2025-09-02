@@ -12,7 +12,7 @@ function updateNavigation() {
                 e.preventDefault();
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                window.location.href = '../public/html/login.html';
+                window.location.href = '/frontend/public/html/login.html';
             });
         }
     }
@@ -24,7 +24,7 @@ function requireAuth() {
     const token = localStorage.getItem('token');
     
     if (!user || !token) {
-        window.location.href = '../public/html/login.html';
+        window.location.href = '/frontend/public/html/login.html';
         return false;
     }
     return true;
@@ -36,18 +36,18 @@ function requireRole(requiredRole) {
     
     const user = JSON.parse(localStorage.getItem('user'));
     
-    if (user.role !== requiredRole) {
+    if (user.user_role !== requiredRole) {
         // Redirect to appropriate dashboard based on role
-        switch(user.role) {
+        switch(user.user_role) {
             case 'admin':
                 // Already on admin page
                 break;
             case 'seller':
-                window.location.href = '../../public/html/seller-dashboard.html';
+                window.location.href = '../../seller/seller-dashboard.html';
                 break;
             case 'customer':
             default:
-                window.location.href = '../../public/html/products.html';
+                window.location.href = '../public/html/products.html';
         }
         return false;
     }

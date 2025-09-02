@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
           case "seller":
             window.location.href = "/frontend/seller/seller-dashboard.html";
             break;
-          case "buyer":
+          case "customer":
           default:
             window.location.href = "/frontend/public/html/index.html";
         }

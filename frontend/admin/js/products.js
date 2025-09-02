@@ -56,21 +56,27 @@ function displayProducts(products) {
         return;
     }
     
-    productsContainer.innerHTML = products.map(product => `
-        <div class="border rounded-lg p-4 shadow-sm">
-            <img src="${product.product_image_url ? 'http://localhost:5000/uploads/' + product.product_image_url : '/uploads/icon.png'}" alt="${product.product_name}" class="w-full h-48 object-cover rounded-md mb-4">
-            <h3 class="text-lg font-semibold mb-2">${product.product_name}</h3>
-            <p class="text-gray-600 mb-2">${product.description || 'No description available'}</p>
-            <div class="flex justify-between items-center">
-                <span class="text-orange-500 font-bold">UGX ${product.price_per_unit}/${product.unit}</span>
-                <span class="text-gray-500">Qty: ${product.available_quantity}</span>
+    productsContainer.innerHTML = products.map(product => {
+        // Handle image URL properly
+        const imageUrl =  product.product_image_url || "/uploads/icon.png";
+        const fullImageUrl = imageUrl.startsWith("/uploads/") ? `http://localhost:5000${imageUrl}` : `http://localhost:5000/uploads/${imageUrl}`;
+        
+        return `
+            <div class="border rounded-lg p-4 shadow-sm">
+                <img src="${fullImageUrl}" alt="${product.product_name}" class="w-full h-48 object-cover rounded-md mb-4">
+                <h3 class="text-lg font-semibold mb-2">${product.product_name}</h3>
+                <p class="text-gray-600 mb-2">${product.description || 'No description available'}</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-orange-500 font-bold">UGX ${product.price_per_unit}/${product.unit}</span>
+                    <span class="text-gray-500">Qty: ${product.available_quantity}</span>
+                </div>
+                <div class="mt-4 flex justify-between">
+                    <button class="text-indigo-600 hover:text-indigo-900" onclick="editProduct(${product.product_id})">Edit</button>
+                    <button class="text-red-600 hover:text-red-900" onclick="deleteProduct(${product.product_id})">Delete</button>
+                </div>
             </div>
-            <div class="mt-4 flex justify-between">
-                <button class="text-indigo-600 hover:text-indigo-900" onclick="editProduct(${product.product_id})">Edit</button>
-                <button class="text-red-600 hover:text-red-900" onclick="deleteProduct(${product.product_id})">Delete</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Filter products based on search term
@@ -111,10 +117,10 @@ async function handleAddProduct(e) {
         const token = localStorage.getItem('token');
         const formData = new FormData();
         
-        formData.append('name', productName);
-        formData.append('price', productPrice);
+        formData.append('product_name', productName);
+        formData.append('price_per_unit', productPrice);
         formData.append('unit', productUnit);
-        formData.append('quantity', productQuantity);
+        formData.append('available_quantity', productQuantity);
         formData.append('description', productDescription);
         if (productImage) {
             formData.append('image', productImage);

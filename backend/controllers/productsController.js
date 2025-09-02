@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// ✅ Get all products
+// Get all products
 exports.getAllProducts = async (req, res) => {
   try {
     const [products] = await db.query('SELECT * FROM products ORDER BY product_id DESC');
@@ -11,7 +11,7 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// ✅ Get products by seller ID
+//  Get products by seller ID
 exports.getProductsBySeller = async (req, res) => {
   try {
     const [products] = await db.query(
@@ -32,7 +32,7 @@ exports.createProduct = async (req, res) => {
   }
 
   const { product_name, description, price_per_unit, unit, available_quantity } = req.body;
-  const product_image_url = req.file?.filename;
+  const product_image_url = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   if (!product_name || !price_per_unit || !unit || !available_quantity || !product_image_url) {
     return res.status(400).json({ message: 'All fields are required.' });

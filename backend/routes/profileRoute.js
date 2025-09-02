@@ -8,7 +8,7 @@ const path = require('path');
 // Multer setup for profile picture uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, path.join(__dirname, '..', '..', 'uploads'));
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -19,7 +19,7 @@ const upload = multer({ storage });
 // Get user profile
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [users] = await db.promise().query('SELECT user_id, username, email, user_role, profile_picture_url FROM users WHERE user_id = ?', [req.user.id]);
+    const [users] = await db.query('SELECT user_id, username, email, user_role, profile_picture_url FROM users WHERE user_id = ?', [req.user.user_id]);
     const user = users[0];
     res.json({
       user_id: user.user_id,
@@ -33,25 +33,25 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// Update profile (name, email, profile picture)
+// Update profile (username, email, profile picture)
 router.put('/', verifyToken, upload.single('profile_pic'), async (req, res) => {
-  const { name, email } = req.body;
-  const profilePic = req.file ? req.file.filename : undefined;
+  const { username, email } = req.body;
+  const profilePic = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   try {
     const updates = [];
     const values = [];
 
-    if (name) {
-      updates.push('name = ?');
-      values.push(name);
+    if (username) {
+      updates.push('username = ?');
+      values.push(username);
     }
     if (email) {
       updates.push('email = ?');
       values.push(email);
     }
     if (profilePic) {
-      updates.push('profile_pic = ?');
+      updates.push('profile_picture_url = ?');
       values.push(profilePic);
     }
 
@@ -59,9 +59,9 @@ router.put('/', verifyToken, upload.single('profile_pic'), async (req, res) => {
       return res.status(400).json({ message: 'No fields to update' });
     }
 
-    values.push(req.user.id);
-    const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-    await db.promise().query(sql, values);
+    values.push(req.user.user_id);
+    const sql = `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`;
+    await db.query(sql, values);
 
     res.json({ message: 'Profile updated successfully' });
   } catch (err) {
