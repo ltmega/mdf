@@ -12,10 +12,10 @@ exports.getOrdersByUser = async (req, res) => {
       [req.user.user_id]
     );
 
-    console.log('✅ Orders found for user:', rows.length);
+    console.log(' Orders found for user:', rows.length);
     res.status(200).json(rows);
   } catch (err) {
-    console.error('❌ Error fetching user orders:', err);
+    console.error(' Error fetching user orders:', err);
     res.status(500).json({ message: 'Failed to retrieve orders' });
   }
 };
@@ -38,10 +38,10 @@ exports.getOrdersBySeller = async (req, res) => {
       [req.user.user_id]
     );
 
-    console.log('✅ Orders found for seller:', rows.length);
+    console.log('Orders found for seller:', rows.length);
     res.status(200).json(rows);
   } catch (err) {
-    console.error('❌ Error fetching seller orders:', err);
+    console.error(' Error fetching seller orders:', err);
     res.status(500).json({ message: 'Failed to retrieve orders' });
   }
 };
@@ -51,28 +51,28 @@ exports.getOrdersBySeller = async (req, res) => {
 // Body: { items:[{product_id, quantity, price}], total_amount, delivery_address }
 // -------------------------
 exports.createOrder = async (req, res) => {
-    console.log('📦 Request body:', req.body);
-  console.log('📦 createOrder body:', req.body);
-  console.log('🔐 user in req.user:', req.user);
+    console.log(' Request body:', req.body);
+  console.log('createOrder body:', req.body);
+  console.log('user in req.user:', req.user);
 
   const { items, total_amount, delivery_address } = req.body;
 
   // Validate request body
   if (!Array.isArray(items) || items.length === 0) {
-    console.warn('⚠️ Validation failed: Items are required.');
+    console.warn('Validation failed: Items are required.');
     return res.status(400).json({ message: 'Items are required.' });
   }
   if (typeof total_amount === 'undefined' || total_amount === null) {
-    console.warn('⚠️ Validation failed: total_amount is required.');
+    console.warn(' Validation failed: total_amount is required.');
     return res.status(400).json({ message: 'total_amount is required.' });
   }
   if (!delivery_address || !delivery_address.trim()) {
-    console.warn('⚠️ Validation failed: delivery_address is required.');
+    console.warn(' Validation failed: delivery_address is required.');
     return res.status(400).json({ message: 'delivery_address is required.' });
   }
 
   try {
-    console.log('🔄 BEGIN TRANSACTION');
+    console.log(' BEGIN TRANSACTION');
     await db.query('START TRANSACTION');
 
     // Insert order into the `orders` table
@@ -82,15 +82,17 @@ exports.createOrder = async (req, res) => {
     );
 
     const orderId = orderResult.insertId;
-    console.log('🆔 New order_id:', orderId);
+    console.log(' New order_id:', orderId);
 
     // Insert order items into the `order_items` table
     for (const it of items) {
+      // Convert product_id to number for all items
       const pid = Number(it.product_id);
       const qty = Number(it.quantity);
       const price = Number(it.price);
 
-      if (!pid || !qty || Number.isNaN(price)) {
+      // Validate all items (including recipe ingredients that are now mapped to actual products)
+      if (!pid || !qty || Number.isNaN(price) || qty <= 0) {
         console.warn('⚠️ Skipping invalid item:', it);
         continue;
       }
@@ -104,28 +106,29 @@ exports.createOrder = async (req, res) => {
 
     // Commit the transaction
     await db.query('COMMIT');
-    console.log('✅ COMMIT: order created:', orderId);
+    console.log(' COMMIT: order created:', orderId);
     res.status(201).json({ message: 'Order created successfully', orderId });
   } catch (err) {
-    console.error('❌ Error creating order:', err);
+    console.error(' Error creating order:', err);
 
     // Rollback the transaction in case of an error
     try {
       await db.query('ROLLBACK');
-      console.log('↩️ ROLLBACK done');
+      console.log('↩ ROLLBACK done');
     } catch (rollbackErr) {
-      console.error('❌ Error during ROLLBACK:', rollbackErr);
+      console.error(' Error during ROLLBACK:', rollbackErr);
     }
 
     res.status(500).json({ message: 'Failed to create order' });
   }
 };
+
 // -------------------------
 // Admin: list all orders
 // -------------------------
 exports.getAllOrders = async (_req, res) => {
   try {
-    console.log('🗂️ Admin getAllOrders');
+    console.log(' Admin getAllOrders');
     const [rows] = await db.query(
       `SELECT o.*,
               u.username AS buyer_name
@@ -133,10 +136,10 @@ exports.getAllOrders = async (_req, res) => {
        JOIN users u ON o.buyer_id = u.user_id
        ORDER BY o.order_date DESC`
     );
-    console.log('✅ Orders total:', rows.length);
+    console.log(' Orders total:', rows.length);
     res.status(200).json(rows);
   } catch (err) {
-    console.error('❌ Error fetching all orders:', err);
+    console.error(' Error fetching all orders:', err);
     res.status(500).json({ message: 'Failed to retrieve orders' });
   }
 };
@@ -149,7 +152,7 @@ exports.updateOrderStatus = async (req, res) => {
   const { orderId } = req.params;
   const { status } = req.body;
 
-  console.log(`✏️ Update order ${orderId} -> ${status}`);
+  console.log(` Update order ${orderId} -> ${status}`);
 
   if (!status) {
     return res.status(400).json({ message: 'Status is required' });
@@ -166,10 +169,31 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    console.log('✅ Status updated for order:', orderId);
+    console.log(' Status updated for order:', orderId);
     res.status(200).json({ message: 'Order status updated successfully' });
   } catch (err) {
-    console.error('❌ Error updating order status:', err);
+    console.error(' Error updating order status:', err);
     res.status(500).json({ message: 'Failed to update order status' });
+  }
+};
+
+// -------------------------
+// Get order items
+// -------------------------
+exports.getOrderItems = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    
+    const [items] = await db.query(`
+      SELECT oi.*, p.product_name
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.product_id
+      WHERE oi.order_id = ?
+    `, [orderId]);
+    
+    res.status(200).json(items);
+  } catch (err) {
+    console.error('Error fetching order items:', err);
+    res.status(500).json({ message: 'Failed to retrieve order items' });
   }
 };

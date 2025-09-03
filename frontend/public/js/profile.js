@@ -13,7 +13,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadProfile();
   
   // Set up form submission
-  document.getElementById('profile-form').addEventListener('submit', handleProfileUpdate);
+  const profileForm = document.getElementById('profile-form');
+  if (profileForm) {
+    profileForm.addEventListener('submit', handleProfileUpdate);
+  }
+  
+  // Set up edit button
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  if (editProfileBtn) {
+    editProfileBtn.addEventListener('click', enableEditing);
+  }
+  
+  // Set up cancel button
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', cancelEditing);
+  }
+  
+  // Set up change picture button
+  const changePicBtn = document.getElementById('change-pic-btn');
+  const profilePicInput = document.getElementById('profile-pic-input');
+  if (changePicBtn && profilePicInput) {
+    changePicBtn.addEventListener('click', () => {
+      profilePicInput.click();
+    });
+    profilePicInput.addEventListener('change', handleProfilePicChange);
+  }
 });
 
 async function loadProfile() {
@@ -35,70 +60,74 @@ async function loadProfile() {
     displayProfile(profile, API_BASE);
   } catch (error) {
     console.error('Error loading profile:', error);
-    document.getElementById('profile-content').innerHTML = `
-      <div class="text-center text-red-500">
-        <p>Error loading profile. Please try again later.</p>
-      </div>
-    `;
+    // Update existing elements with error message
+    const profilePic = document.getElementById('profile-pic');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const roleInput = document.getElementById('role');
+    
+    if (profilePic) profilePic.src = '/uploads/icon.png';
+    if (usernameInput) usernameInput.value = 'Error loading profile';
+    if (emailInput) emailInput.value = 'Error loading profile';
+    if (roleInput) roleInput.value = 'Error loading profile';
   }
 }
 
 function displayProfile(profile, API_BASE) {
-  const profileContent = document.getElementById('profile-content');
+  // Update existing elements with profile data
+  const profilePic = document.getElementById('profile-pic');
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  const roleInput = document.getElementById('role');
+  const memberStatusInput = document.getElementById('member-status');
   
   // Handle profile picture URL
-  const imageUrl = profile.profile_picture_url || "/uploads/icon.png";
-  const fullImageUrl = imageUrl.startsWith("/uploads/") ? `${API_BASE}${imageUrl}` : `${API_BASE}/uploads/${imageUrl}`;
+  if (profilePic) {
+    const imageUrl = profile.profile_picture_url || "/uploads/icon.png";
+    const fullImageUrl = imageUrl.startsWith("/uploads/") ? `${API_BASE}${imageUrl}` : `${API_BASE}/uploads/${imageUrl}`;
+    profilePic.src = fullImageUrl;
+    profilePic.onerror = function() {
+      this.src = `${API_BASE}/uploads/icon.png`;
+    };
+  }
+  
+  // Update form fields
+  if (usernameInput) usernameInput.value = profile.username || '';
+  if (emailInput) emailInput.value = profile.email || '';
+  if (roleInput) roleInput.value = profile.user_role || '';
+  if (memberStatusInput) memberStatusInput.value = profile.membership_status || 'Active';
+}
 
-  profileContent.innerHTML = `
-    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
-      <div class="text-center mb-8">
-        <img src="${fullImageUrl}" 
-             alt="Profile Picture" 
-             class="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-             onerror="this.src='${API_BASE}/uploads/icon.png'" />
-        <h2 class="text-2xl font-bold text-gray-800">${profile.username}</h2>
-        <p class="text-gray-600">${profile.email}</p>
-        <span class="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full mt-2">
-          ${profile.user_role}
-        </span>
-      </div>
+// Enable profile editing
+function enableEditing() {
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  
+  if (usernameInput) usernameInput.disabled = false;
+  if (emailInput) emailInput.disabled = false;
+  
+  // Show edit actions
+  const editActions = document.getElementById('edit-actions');
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  
+  if (editActions) editActions.classList.remove('hidden');
+  if (editProfileBtn) editProfileBtn.classList.add('hidden');
+}
 
-      <form id="profile-form" class="space-y-6">
-        <div>
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-          <input type="text" 
-                 id="username" 
-                 name="username" 
-                 value="${profile.username}" 
-                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        </div>
-
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input type="email" 
-                 id="email" 
-                 name="email" 
-                 value="${profile.email}" 
-                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        </div>
-
-        <div>
-          <label for="profile-pic" class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
-          <input type="file" 
-                 id="profile-pic" 
-                 name="profile-pic" 
-                 accept="image/*"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        </div>
-
-        <button type="submit" 
-                class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md transition duration-200">
-          Update Profile
-        </button>
-      </form>
-    </div>
-  `;
+// Cancel profile editing
+function cancelEditing() {
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  
+  if (usernameInput) usernameInput.disabled = true;
+  if (emailInput) emailInput.disabled = true;
+  
+  // Hide edit actions
+  const editActions = document.getElementById('edit-actions');
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  
+  if (editActions) editActions.classList.add('hidden');
+  if (editProfileBtn) editProfileBtn.classList.remove('hidden');
 }
 
 async function handleProfileUpdate(e) {
@@ -108,21 +137,19 @@ async function handleProfileUpdate(e) {
     const API_BASE = "http://localhost:5000";
     const token = localStorage.getItem("token");
     
-    const formData = new FormData();
-    const username = document.getElementById('username').value;
-    const email = document.getElementById('email').value;
-    const profilePic = document.getElementById('profile-pic').files[0];
-
-    if (username) formData.append('username', username);
-    if (email) formData.append('email', email);
-    if (profilePic) formData.append('profile_pic', profilePic);
-
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    
+    const username = usernameInput ? usernameInput.value : '';
+    const email = emailInput ? emailInput.value : '';
+    
     const response = await fetch(`${API_BASE}/api/profile`, {
       method: 'PUT',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: formData
+      body: JSON.stringify({ username, email })
     });
 
     if (!response.ok) {
@@ -132,8 +159,16 @@ async function handleProfileUpdate(e) {
 
     alert('Profile updated successfully!');
     
-    // Reload profile to show updated data
-    await loadProfile();
+    // Disable fields after successful update
+    if (usernameInput) usernameInput.disabled = true;
+    if (emailInput) emailInput.disabled = true;
+    
+    // Hide edit actions
+    const editActions = document.getElementById('edit-actions');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    
+    if (editActions) editActions.classList.add('hidden');
+    if (editProfileBtn) editProfileBtn.classList.remove('hidden');
     
     // Update localStorage user data
     const user = JSON.parse(localStorage.getItem("user"));
@@ -144,5 +179,74 @@ async function handleProfileUpdate(e) {
   } catch (error) {
     console.error('Error updating profile:', error);
     alert(error.message || 'Error updating profile. Please try again.');
+  }
+}
+
+// Handle profile picture change
+async function handleProfilePicChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const API_BASE = "http://localhost:5000";
+    const token = localStorage.getItem("token");
+    
+    const formData = new FormData();
+    formData.append('profile_pic', file);
+    
+    const response = await fetch(`${API_BASE}/api/profile`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      // Try to parse error response
+      let errorMessage = 'Failed to update profile picture';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If parsing fails, use the response text
+        errorMessage = await response.text();
+      }
+      throw new Error(errorMessage);
+    }
+    
+    // After successful upload, get updated user data
+    const updatedUserResponse = await fetch(`${API_BASE}/api/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!updatedUserResponse.ok) {
+      throw new Error('Failed to fetch updated profile data');
+    }
+    
+    const updatedUser = await updatedUserResponse.json();
+    
+    // Update local storage
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    
+    // Update profile pictures
+    const profilePic = document.getElementById('profile-pic');
+    const headerProfilePic = document.getElementById('header-profile-pic');
+    
+    if (profilePic || headerProfilePic) {
+      let imagePath = updatedUser.profile_picture_url || "/uploads/icon.png";
+      if (!imagePath.startsWith("/uploads/")) {
+        imagePath = `/uploads/${imagePath}`;
+      }
+      if (profilePic) profilePic.src = imagePath;
+      if (headerProfilePic) headerProfilePic.src = imagePath;
+    }
+    
+    alert('Profile picture updated successfully!');
+  } catch (error) {
+    console.error('Error updating profile picture:', error);
+    alert(error.message || 'Error updating profile picture');
   }
 }

@@ -109,4 +109,30 @@ router.get('/', verifyToken, requireRole(['admin']), async (req, res) => {
   }
 });
 
+// DELETE /api/users/:id - Delete a user (admin only)
+router.delete('/:id', verifyToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    // Prevent admin from deleting themselves
+    if (userId == req.user.user_id) {
+      return res.status(400).json({ message: 'You cannot delete your own account.' });
+    }
+    
+    // Check if user exists
+    const [users] = await db.query('SELECT user_id FROM users WHERE user_id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    
+    // Delete the user
+    await db.query('DELETE FROM users WHERE user_id = ?', [userId]);
+    
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

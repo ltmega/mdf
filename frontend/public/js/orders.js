@@ -1,10 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const ordersList = document.getElementById("orders-list");
+  const ordersList = document.getElementById("order-list");
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
 
   if (!user || !token) {
     window.location.href = "login.html";
+    return;
+  }
+
+  // Check if ordersList element exists
+  if (!ordersList) {
+    console.error('Orders list element not found');
     return;
   }
 
@@ -35,16 +41,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     displayOrders(orders);
   } catch (error) {
     console.error('Error loading orders:', error);
-    ordersList.innerHTML = `
-      <div class="text-center text-red-500">
-        <p>Error loading orders. Please try again later.</p>
-      </div>
-    `;
+    if (ordersList) {
+      ordersList.innerHTML = `
+        <div class="text-center text-red-500">
+          <p>Error loading orders. Please try again later.</p>
+        </div>
+      `;
+    }
   }
 });
 
 function displayOrders(orders) {
   const ordersList = document.getElementById("order-list");
+  
+  // Check if ordersList element exists
+  if (!ordersList) {
+    console.error('Orders list element not found');
+    return;
+  }
   
   if (orders.length === 0) {
     ordersList.innerHTML = `

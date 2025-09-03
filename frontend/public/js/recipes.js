@@ -75,27 +75,14 @@ function displayRecipes(recipes, API_BASE) {
 }
 
 async function orderIngredients(recipeId) {
-  try {
-    const API_BASE = "http://localhost:5000";
-    const res = await fetch(`${API_BASE}/api/recipes/${recipeId}/ingredients`);
-    if (!res.ok) throw new Error('Failed to fetch ingredients');
-
-    const data = await res.json();
-    const ingredientsArray = data.ingredients.split(',').map(i => ({
-      name: i.trim(),
-      quantity: 1,
-      unit: '', // optional for now
-      price: 0, // default price
-      description: '' // optional
-    }));
-
-    // Use the new cart function
-    addRecipeIngredientsToCart(ingredientsArray);
-
-    // Redirect to cart
-    window.location.href = '/frontend/public/html/cart.html';
-  } catch (err) {
-    console.error('Error ordering ingredients:', err);
-    alert('Could not add ingredients to cart.');
-  }
+  // Get the recipe element to extract name and image
+  const recipeElement = event.target.closest('.bg-white');
+  const recipeName = recipeElement.querySelector('h3').textContent;
+  const recipeImageUrl = recipeElement.querySelector('img').src;
+  
+  // Use the new cart function with recipe details
+  addRecipeIngredientsToCart(recipeId, recipeName, recipeImageUrl);
+  
+  // Redirect to cart
+  window.location.href = '/frontend/public/html/cart.html';
 }

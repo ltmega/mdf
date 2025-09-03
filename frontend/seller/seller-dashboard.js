@@ -162,14 +162,41 @@ function displayProducts(products) {
 
 // Display recipes
 function displayRecipes(recipes) {
-    const recipesContainer = document.getElementById('recipes-list');
+    const recipesContainer = document.getElementById('recipes-tab');
     
-    if (recipes.length === 0) {
-        recipesContainer.innerHTML = '<p class="text-gray-500 text-center col-span-full">No recipes yet. Add your first recipe!</p>';
+    if (!recipesContainer) {
+        console.error('Recipes container not found');
         return;
     }
     
-    recipesContainer.innerHTML = recipes.map(recipe => {
+    if (recipes.length === 0) {
+        // Find the grid container within recipes-tab or create a placeholder
+        const existingGrid = recipesContainer.querySelector('.grid');
+        if (existingGrid) {
+            existingGrid.innerHTML = '<p class="text-gray-500 text-center col-span-full">No recipes yet. Add your first recipe!</p>';
+        } else {
+            // Add a grid container if it doesn't exist
+            recipesContainer.innerHTML += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"><p class="text-gray-500 text-center col-span-full">No recipes yet. Add your first recipe!</p></div>';
+        }
+        return;
+    }
+    
+    // Create or update the grid container
+    let gridContainer = recipesContainer.querySelector('.grid');
+    if (!gridContainer) {
+        // Create grid container after the form
+        const form = recipesContainer.querySelector('form');
+        if (form) {
+            gridContainer = document.createElement('div');
+            gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6';
+            recipesContainer.appendChild(gridContainer);
+        } else {
+            console.error('Could not find form in recipes-tab');
+            return;
+        }
+    }
+    
+    gridContainer.innerHTML = recipes.map(recipe => {
         const imageUrl = recipe.recipe_image_url || "/uploads/icon.png";
         const fullImageUrl = imageUrl.startsWith("/uploads/") ? `http://localhost:5000${imageUrl}` : `http://localhost:5000/uploads/${imageUrl}`;
         

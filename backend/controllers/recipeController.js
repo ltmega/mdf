@@ -24,10 +24,10 @@ exports.createRecipe = async (req, res) => {
   }
 
   const { recipe_name, ingredients, instructions } = req.body;
-  const recipe_image_url = req.file ? `/uploads/${req.file.filename}` : undefined;
+  const recipe_image_url = req.file ? `/uploads/${req.file.filename}` : '/uploads/icon.png';
 
-  if (!recipe_name || !ingredients || !instructions || !recipe_image_url) {
-    return res.status(400).json({ message: 'All fields are required.' });
+  if (!recipe_name || !ingredients || !instructions) {
+    return res.status(400).json({ message: 'Recipe name, ingredients, and instructions are required.' });
   }
 
   try {

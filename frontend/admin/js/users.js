@@ -72,7 +72,7 @@ function displayUsers(users) {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                <button class="text-red-600 hover:text-red-900">Delete</button>
+                <button class="text-red-600 hover:text-red-900" onclick="deleteUser(${user.user_id})">Delete</button>
             </td>
         </tr>
     `).join('');
@@ -92,4 +92,31 @@ function filterUsers(searchTerm) {
             row.style.display = 'none';
         }
     });
+}
+
+// Delete user function
+async function deleteUser(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete user');
+        }
+        
+        alert('User deleted successfully!');
+        loadUsers(); // Reload users
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        alert(error.message || 'Error deleting user. Please try again later.');
+    }
 }

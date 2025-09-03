@@ -58,7 +58,7 @@ function displayRecipes(recipes) {
     
     recipesContainer.innerHTML = recipes.map(recipe => `
         <div class="border rounded-lg p-4 shadow-sm">
-            <img src="${recipe.recipe_image_url ? 'http://localhost:5000/uploads/' + recipe.recipe_image_url : '/uploads/icon.png'}" alt="${recipe.recipe_name}" class="w-full h-48 object-cover rounded-md mb-4">
+            <img src="${recipe.recipe_image_url ? (recipe.recipe_image_url.startsWith('http') ? recipe.recipe_image_url : 'http://localhost:5000' + (recipe.recipe_image_url.startsWith('/') ? recipe.recipe_image_url : '/' + recipe.recipe_image_url)) : 'http://localhost:5000/uploads/icon.png'}" alt="${recipe.recipe_name}" class="w-full h-48 object-cover rounded-md mb-4" onerror="this.src='http://localhost:5000/uploads/icon.png'">
             <h3 class="text-lg font-semibold mb-2">${recipe.recipe_name}</h3>
             <p class="text-gray-600 mb-2">${recipe.ingredients || 'No ingredients listed'}</p>
             <div class="mt-4 flex justify-between">

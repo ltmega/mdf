@@ -19,4 +19,7 @@ router.get('/admin', verifyToken, requireRole(['admin']), ordersController.getAl
 // Admin: Update order status
 router.put('/:orderId/status', verifyToken, requireRole(['admin']), ordersController.updateOrderStatus);
 
+// Get order items
+router.get('/:orderId/items', verifyToken, ordersController.getOrderItems);
+
 module.exports = router;

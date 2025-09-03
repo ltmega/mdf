@@ -95,7 +95,8 @@ async function loadSellerData(token, userId) {
             document.getElementById('total-products').textContent = products.length;
         }
         
-        // Load total sales
+        // Load total sales and orders
+        let orders = []; // Define orders variable in the correct scope
         const ordersResponse = await fetch('http://localhost:5000/api/orders/seller', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -103,7 +104,7 @@ async function loadSellerData(token, userId) {
         });
         
         if (ordersResponse.ok) {
-            const orders = await ordersResponse.json();
+            orders = await ordersResponse.json();
             const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
             document.getElementById('total-sales').textContent = `UGX ${totalSales.toFixed(2)}`;
         }
@@ -227,10 +228,11 @@ async function handleProfilePicChange(e) {
         const user = JSON.parse(localStorage.getItem('user'));
         
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('profile_pic', file);
         
-        const response = await fetch(`http://localhost:5000/api/users/${user.user_id}/profile-picture`, {
-            method: 'POST',
+        // Fix: Use the correct endpoint for profile picture upload
+        const response = await fetch(`http://localhost:5000/api/profile`, {
+            method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
             },
@@ -238,11 +240,30 @@ async function handleProfilePicChange(e) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update profile picture');
+            // Try to parse error response
+            let errorMessage = 'Failed to update profile picture';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // If parsing fails, use the response text
+                errorMessage = await response.text();
+            }
+            throw new Error(errorMessage);
         }
         
-        const updatedUser = await response.json();
+        // After successful upload, get updated user data
+        const updatedUserResponse = await fetch(`http://localhost:5000/api/profile`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!updatedUserResponse.ok) {
+            throw new Error('Failed to fetch updated profile data');
+        }
+        
+        const updatedUser = await updatedUserResponse.json();
         
         // Update local storage
         localStorage.setItem('user', JSON.stringify(updatedUser));

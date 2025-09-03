@@ -8,9 +8,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleBtn = document.getElementById("toggle-button");
   const messageBox = document.getElementById("message");
 
-  if (!formTitle || !nameField || !nameInput || !emailInput || !passwordInput || !submitBtn || !toggleBtn || !messageBox) {
-    console.error("One or more required elements are missing in the DOM.");
-    return;
+  // Only validate elements that are required for the current page
+  // Some elements may not exist on all pages, which is okay
+  const requiredElements = [formTitle, nameInput, passwordInput, submitBtn, toggleBtn, messageBox];
+  const missingElements = requiredElements.filter(element => !element);
+  
+  if (missingElements.length > 0) {
+    // Only show error if we're on a page that should have these elements
+    // Check if the auth form exists
+    const authForm = document.getElementById("auth-form");
+    if (authForm) {
+      console.error("One or more required elements are missing in the DOM.");
+      return;
+    } else {
+      // Not on an auth page, so it's okay that elements are missing
+      return;
+    }
   }
 
   let isLogin = true;

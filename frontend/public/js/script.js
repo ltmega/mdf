@@ -11,28 +11,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const nav = document.querySelector("nav");
 
   if (user && token) {
-    profileLink.classList.remove("hidden");
-    logoutBtn.classList.remove("hidden");
-    loginRegisterLink.classList.add("hidden");
-    ordersTab.classList.remove("hidden");
+    // Only update elements that exist on the page
+    if (profileLink) profileLink.classList.remove("hidden");
+    if (logoutBtn) logoutBtn.classList.remove("hidden");
+    if (loginRegisterLink) loginRegisterLink.classList.add("hidden");
+    if (ordersTab) ordersTab.classList.remove("hidden");
 
     // Handle profile picture URL
-    let imagePath = user.profile_picture_url || "/uploads/icon.png";
-    if (!imagePath.startsWith("/uploads/")) {
-      imagePath = `/uploads/${imagePath}`;
+    if (profilePic || profileName) {
+      let imagePath = user.profile_picture_url || "/uploads/icon.png";
+      if (!imagePath.startsWith("/uploads/")) {
+        imagePath = `/uploads/${imagePath}`;
+      }
+      if (profilePic) profilePic.src = imagePath;
+      if (profileName) profileName.textContent = user.username;
     }
-    profilePic.src = imagePath;
-    profileName.textContent = user.username;
 
-    logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "login.html";
-    });
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "../public/html/login.html";
+      });
+    }
   } else {
-    profileLink.classList.add("hidden");
-    logoutBtn.classList.add("hidden");
-    loginRegisterLink.classList.remove("hidden");
-    ordersTab.classList.add("hidden");
+    if (profileLink) profileLink.classList.add("hidden");
+    if (logoutBtn) logoutBtn.classList.add("hidden");
+    if (loginRegisterLink) loginRegisterLink.classList.remove("hidden");
+    if (ordersTab) ordersTab.classList.add("hidden");
   }
 });
