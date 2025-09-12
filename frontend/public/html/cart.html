@@ -30,9 +30,11 @@
 
   <main class="p-8 max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Your Cart</h1>
+    <p id="empty-cart-message" class="hidden text-center text-gray-500 mb-4">Your cart is empty</p>
     <div id="cart-items" class="space-y-4"></div>
-    <div class="mt-6 text-right">
-      <button class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md" onclick="checkout()">
+    <div class="mt-6 flex items-center justify-between">
+      <div class="text-xl font-bold">Total: <span id="cart-total">UGX 0.00</span></div>
+      <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md" onclick="checkout()">
         Checkout
       </button>
     </div>

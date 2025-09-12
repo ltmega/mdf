@@ -12,6 +12,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load user profile
   await loadProfile();
   
+  // Load user orders
+  await loadUserOrders();
+  
   // Set up form submission
   const profileForm = document.getElementById('profile-form');
   if (profileForm) {
@@ -39,7 +42,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     profilePicInput.addEventListener('change', handleProfilePicChange);
   }
+  
+  // Set up logout functionality
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
 });
+
+// Handle logout
+function handleLogout(e) {
+  e.preventDefault();
+  
+  if (confirm('Are you sure you want to logout?')) {
+    // Clear all user data
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    
+    // Clear user-specific cart
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      const cartKey = `cart_${user.user_id}`;
+      localStorage.removeItem(cartKey);
+    }
+    
+    // Redirect to login page
+    window.location.href = 'login.html';
+  }
+}
 
 async function loadProfile() {
   try {
@@ -96,6 +126,90 @@ function displayProfile(profile, API_BASE) {
   if (emailInput) emailInput.value = profile.email || '';
   if (roleInput) roleInput.value = profile.user_role || '';
   if (memberStatusInput) memberStatusInput.value = profile.membership_status || 'Active';
+  
+  // Update header username
+  const headerUsername = document.getElementById('profile-username');
+  if (headerUsername) {
+    headerUsername.textContent = profile.username || 'User';
+  }
+}
+
+// Load user orders for profile page
+async function loadUserOrders() {
+  try {
+    const API_BASE = "http://localhost:5000";
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user || !token) return;
+
+    // Get orders based on user role
+    let endpoint;
+    if (user.user_role === "admin") {
+      endpoint = `${API_BASE}/api/orders/admin`;
+    } else if (user.user_role === "seller") {
+      endpoint = `${API_BASE}/api/orders/seller`;
+    } else {
+      endpoint = `${API_BASE}/api/orders/user`;
+    }
+
+    const response = await fetch(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch orders');
+    }
+
+    const orders = await response.json();
+    displayOrderHistory(orders);
+  } catch (error) {
+    console.error('Error loading orders:', error);
+    const orderHistory = document.getElementById('order-history');
+    if (orderHistory) {
+      orderHistory.innerHTML = '<p class="text-red-500 text-center">Error loading orders. Please try again later.</p>';
+    }
+  }
+}
+
+// Display order history in profile page
+function displayOrderHistory(orders) {
+  const orderHistory = document.getElementById('order-history');
+  
+  if (!orderHistory) return;
+  
+  if (orders.length === 0) {
+    orderHistory.innerHTML = '<p class="text-gray-600 text-center">No orders found.</p>';
+    return;
+  }
+
+  orderHistory.innerHTML = orders.map(order => `
+    <div class="bg-gray-50 p-4 rounded-lg border">
+      <div class="flex justify-between items-start mb-2">
+        <div>
+          <h4 class="font-semibold text-gray-800">Order #${order.order_id}</h4>
+          <p class="text-sm text-gray-600">Date: ${new Date(order.order_date).toLocaleDateString()}</p>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-orange-600">UGX ${order.total_amount}</p>
+          <p class="text-sm ${getStatusColor(order.status)}">${order.status}</p>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600">Delivery: ${order.delivery_address}</p>
+    </div>
+  `).join('');
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case 'pending': return 'text-yellow-600';
+    case 'confirmed': return 'text-blue-600';
+    case 'delivered': return 'text-green-600';
+    case 'cancelled': return 'text-red-600';
+    default: return 'text-gray-600';
+  }
 }
 
 // Enable profile editing

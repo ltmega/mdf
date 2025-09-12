@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const ordersList = document.getElementById("order-list");
+  const ordersList = document.getElementById("ordersList");
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
 
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function displayOrders(orders) {
-  const ordersList = document.getElementById("order-list");
+  const ordersList = document.getElementById("ordersList");
   
   // Check if ordersList element exists
   if (!ordersList) {

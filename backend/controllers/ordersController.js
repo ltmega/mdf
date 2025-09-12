@@ -5,7 +5,7 @@ const db = require('../config/db');
 // -------------------------
 exports.getOrdersByUser = async (req, res) => {
   try {
-    console.log('👤 getOrdersByUser for buyer_id:', req.user.user_id);
+    //console.log('getOrdersByUser for buyer_id:', req.user.user_id);
 
     const [rows] = await db.query(
       'SELECT * FROM orders WHERE buyer_id = ? ORDER BY order_date DESC',
@@ -15,7 +15,7 @@ exports.getOrdersByUser = async (req, res) => {
     console.log(' Orders found for user:', rows.length);
     res.status(200).json(rows);
   } catch (err) {
-    console.error(' Error fetching user orders:', err);
+    console.error('Error fetching user orders:', err);
     res.status(500).json({ message: 'Failed to retrieve orders' });
   }
 };
@@ -25,7 +25,7 @@ exports.getOrdersByUser = async (req, res) => {
 // -------------------------
 exports.getOrdersBySeller = async (req, res) => {
   try {
-    console.log('👤 getOrdersBySeller for seller_id:', req.user.user_id);
+    //console.log('👤 getOrdersBySeller for seller_id:', req.user.user_id);
 
     const [rows] = await db.query(
       `SELECT DISTINCT o.*, u.username AS buyer_name
@@ -38,7 +38,7 @@ exports.getOrdersBySeller = async (req, res) => {
       [req.user.user_id]
     );
 
-    console.log('Orders found for seller:', rows.length);
+    //console.log('Orders found for seller:', rows.length);
     res.status(200).json(rows);
   } catch (err) {
     console.error(' Error fetching seller orders:', err);
@@ -51,7 +51,7 @@ exports.getOrdersBySeller = async (req, res) => {
 // Body: { items:[{product_id, quantity, price}], total_amount, delivery_address }
 // -------------------------
 exports.createOrder = async (req, res) => {
-    console.log(' Request body:', req.body);
+  console.log(' Request body:', req.body);
   console.log('createOrder body:', req.body);
   console.log('user in req.user:', req.user);
 
@@ -84,24 +84,57 @@ exports.createOrder = async (req, res) => {
     const orderId = orderResult.insertId;
     console.log(' New order_id:', orderId);
 
-    // Insert order items into the `order_items` table
+    // Insert order items into the `order_items` table and reduce product quantities
     for (const it of items) {
-      // Convert product_id to number for all items
-      const pid = Number(it.product_id);
       const qty = Number(it.quantity);
       const price = Number(it.price);
 
-      // Validate all items (including recipe ingredients that are now mapped to actual products)
-      if (!pid || !qty || Number.isNaN(price) || qty <= 0) {
-        console.warn('⚠️ Skipping invalid item:', it);
+      // Validate basic item properties
+      if (!qty || Number.isNaN(price) || qty <= 0) {
+        console.warn('Skipping invalid item:', it);
         continue;
       }
 
-      console.log(`   ↳ Adding item to order: product ${pid}, qty ${qty}, price ${price}`);
-      await db.query(
-        'INSERT INTO order_items (order_id, product_id, quantity, price_at_time_of_order) VALUES (?, ?, ?, ?)',
-        [orderId, pid, qty, price]
-      );
+      // Check if this is an ingredient or product
+      if (it.product_id && it.product_id.toString().startsWith('ingredient-')) {
+        // Handle ingredient orders - for now, skip ingredients until database is updated
+        console.log(`Skipping ingredient order (database schema needs update): ingredient ${it.product_id}`);
+        continue;
+      } else {
+        // Handle product orders
+        const pid = Number(it.product_id);
+        
+        if (!pid) {
+          console.warn('Skipping invalid product:', it);
+          continue;
+        }
+
+        // Check if sufficient quantity is available
+        const [productRows] = await db.query('SELECT available_quantity FROM products WHERE product_id = ?', [pid]);
+        if (productRows.length === 0) {
+          console.warn('Product not found:', pid);
+          continue;
+        }
+
+        const availableQty = productRows[0].available_quantity;
+        if (availableQty < qty) {
+          console.warn(`Insufficient quantity for product ${pid}. Available: ${availableQty}, Requested: ${qty}`);
+          continue;
+        }
+
+        console.log(`Adding product to order: product ${pid}, qty ${qty}, price ${price}`);
+        await db.query(
+          'INSERT INTO order_items (order_id, product_id, quantity, price_at_time_of_order) VALUES (?, ?, ?, ?)',
+          [orderId, pid, qty, price]
+        );
+
+        // Reduce product quantity
+        await db.query(
+          'UPDATE products SET available_quantity = available_quantity - ? WHERE product_id = ?',
+          [qty, pid]
+        );
+        console.log(`Reduced quantity for product ${pid} by ${qty}`);
+      }
     }
 
     // Commit the transaction
@@ -114,7 +147,7 @@ exports.createOrder = async (req, res) => {
     // Rollback the transaction in case of an error
     try {
       await db.query('ROLLBACK');
-      console.log('↩ ROLLBACK done');
+      console.log('ROLLBACK done');
     } catch (rollbackErr) {
       console.error(' Error during ROLLBACK:', rollbackErr);
     }
@@ -159,13 +192,34 @@ exports.updateOrderStatus = async (req, res) => {
   }
 
   try {
+    // If status is being changed to cancelled, restore product quantities
+    if (status === 'cancelled') {
+      console.log('Restoring quantities for cancelled order:', orderId);
+
+      // Get all order items for this order
+      const [orderItems] = await db.query(`
+        SELECT oi.product_id, oi.quantity
+        FROM order_items oi
+        WHERE oi.order_id = ?
+      `, [orderId]);
+
+      // Restore quantities for each product
+      for (const item of orderItems) {
+        await db.query(
+          'UPDATE products SET available_quantity = available_quantity + ? WHERE product_id = ?',
+          [item.quantity, item.product_id]
+        );
+        console.log(`Restored ${item.quantity} units for product ${item.product_id}`);
+      }
+    }
+
     const [r] = await db.query(
       'UPDATE orders SET status = ? WHERE order_id = ?',
       [status, orderId]
     );
 
     if (r.affectedRows === 0) {
-      console.warn('⚠️ Order not found:', orderId);
+      console.warn('Order not found:', orderId);
       return res.status(404).json({ message: 'Order not found' });
     }
 

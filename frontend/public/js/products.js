@@ -49,25 +49,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         <p class="text-sm text-gray-600">${product.description || "No description available."}</p>
         <p class="text-orange-600 font-bold mt-2">UGX ${product.price_per_unit}</p>
         <p class="text-sm text-gray-600">Unit: ${product.unit}</p>
-        <p class="text-sm text-gray-600">Available: ${product.available_quantity}</p>
+        <p class="text-sm ${product.available_quantity > 0 ? 'text-gray-600' : 'text-red-600'}">
+          Available: ${product.available_quantity} ${product.available_quantity === 0 ? '(Out of Stock)' : ''}
+        </p>
+        ${product.available_quantity > 0 ? `
         <div class="flex items-center gap-2 mt-4">
-          <button 
+          <button
             class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center"
             onclick="updateProductQuantity(${product.product_id}, -1)">
             -
           </button>
           <span id="quantity-${product.product_id}" class="w-12 text-center font-medium">1</span>
-          <button 
+          <button
             class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center"
             onclick="updateProductQuantity(${product.product_id}, 1)">
             +
           </button>
         </div>
-        <button 
+        <button
           class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-md mt-4 w-full"
           onclick="addToCartById(${product.product_id})">
           Add to Cart
         </button>
+        ` : `
+        <button
+          class="bg-gray-400 text-white font-semibold py-2 px-4 rounded-md mt-4 w-full cursor-not-allowed"
+          disabled>
+          Out of Stock
+        </button>
+        `}
       `;
 
       productList.appendChild(div);
@@ -84,10 +94,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Update product quantity display
 function updateProductQuantity(productId, change) {
   const quantityElement = document.getElementById(`quantity-${productId}`);
-  if (quantityElement) {
+  const product = window.productsCache.find((p) => p.product_id == productId);
+  
+  if (quantityElement && product) {
     let currentQty = parseInt(quantityElement.textContent) || 1;
-    currentQty = Math.max(1, currentQty + change);
+    currentQty = Math.max(1, Math.min(product.available_quantity, currentQty + change));
     quantityElement.textContent = currentQty;
+    
+    if (currentQty >= product.available_quantity) {
+      // Show warning when at max quantity
+      const maxWarning = document.getElementById(`max-warning-${productId}`);
+      if (!maxWarning) {
+        const warning = document.createElement('p');
+        warning.id = `max-warning-${productId}`;
+        warning.className = 'text-xs text-orange-600 mt-1';
+        warning.textContent = 'Maximum available quantity selected';
+        quantityElement.parentNode.appendChild(warning);
+      }
+    } else {
+      // Remove warning if exists
+      const maxWarning = document.getElementById(`max-warning-${productId}`);
+      if (maxWarning) {
+        maxWarning.remove();
+      }
+    }
   }
 }
 
@@ -100,18 +130,35 @@ function getProductQuantity(productId) {
 // ✅ Add product by ID safely
 function addToCartById(productId) {
   const product = window.productsCache.find((p) => p.product_id == productId);
-  if (product) {
-    const quantity = getProductQuantity(productId);
-    addToCart(product, quantity);
-  } else {
+  if (!product) {
     alert("Product not found.");
+    return;
   }
+  
+  if (product.available_quantity === 0) {
+    alert("Sorry, this product is out of stock and cannot be added to cart.");
+    return;
+  }
+  
+  const quantity = getProductQuantity(productId);
+  if (quantity > product.available_quantity) {
+    alert(`Sorry, only ${product.available_quantity} units are available for ${product.product_name}.`);
+    return;
+  }
+  
+  addToCart(product, quantity);
 }
 
-// ✅ Add product to cart
+// ✅ Add product to cart (user-specific)
 function addToCart(product, quantity = 1) {
   try {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+      alert("Please log in to add items to cart");
+      return;
+    }
+    const userCartKey = `cart_${user.user_id}`;
+    let cart = JSON.parse(localStorage.getItem(userCartKey)) || [];
 
     // Check if product exists
     const existing = cart.find((item) => item.product_id === product.product_id);
@@ -126,7 +173,7 @@ function addToCart(product, quantity = 1) {
       alert(`${product.product_name} added to cart!`);
     }
     
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem(userCartKey, JSON.stringify(cart));
     updateCartCount();
   } catch (err) {
     console.error("Error adding to cart:", err);
@@ -135,7 +182,10 @@ function addToCart(product, quantity = 1) {
 
 // ✅ Update cart count
 function updateCartCount() {
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) return;
+  const userCartKey = `cart_${user.user_id}`;
+  const cart = JSON.parse(localStorage.getItem(userCartKey)) || [];
   const cartCount = document.getElementById("cart-count");
   if (cartCount) cartCount.textContent = cart.length;
 }

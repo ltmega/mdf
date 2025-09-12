@@ -13,6 +13,7 @@ const recipeRoutes = require('./routes/recipesRoute.js');
 const orderRoutes = require('./routes/ordersRoute.js');
 const profileRoutes = require('./routes/profileRoute.js');
 const usersRoute = require('./routes/usersRoute.js');
+const ingredientsRoute = require('./routes/ingredientsRoute.js');
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/recipes', recipeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/users', usersRoute);
+app.use('/api/ingredients', ingredientsRoute);
 
 // Root endpoint
 app.get('/', (req, res) => {

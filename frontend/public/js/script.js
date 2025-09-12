@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
       logoutBtn.addEventListener("click", () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        window.location.href = "../public/html/login.html";
+        window.location.href = "/frontend/public/html/login.html";
       });
     }
   } else {

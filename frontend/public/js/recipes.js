@@ -80,9 +80,6 @@ async function orderIngredients(recipeId) {
   const recipeName = recipeElement.querySelector('h3').textContent;
   const recipeImageUrl = recipeElement.querySelector('img').src;
   
-  // Use the new cart function with recipe details
-  addRecipeIngredientsToCart(recipeId, recipeName, recipeImageUrl);
-  
-  // Redirect to cart
-  window.location.href = '/frontend/public/html/cart.html';
+  // Use the new cart function with recipe details - no redirect
+  await addRecipeIngredientsToCart(recipeId, recipeName, recipeImageUrl);
 }

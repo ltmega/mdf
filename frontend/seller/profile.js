@@ -23,7 +23,7 @@ function requireAuth() {
     const token = localStorage.getItem('token');
     
     if (!user || !token) {
-        window.location.href = '../public/html/login.html';
+        window.location.href = '/frontend/public/html/login.html';
         return false;
     }
     return true;
